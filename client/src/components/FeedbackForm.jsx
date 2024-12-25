@@ -1,27 +1,80 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Star, BookOpen, Library, Construction, ThumbsUp, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 
 const FeedbackForm = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { courseId, courseName } = location.state;
+    const [currentPage, setCurrentPage] = useState(1);
 
-    const courseId = location.state.courseId;
+    const feedbackSections = [
+        {
+            id: 'courseExpertise',
+            title: 'Instructor Expertise',
+            icon: <Star className="w-6 h-6" />,
+            questions: [
+                'How would you rate the instructor\'s knowledge?',
+                'How effective was the teaching methodology?',
+                'How well were doubts addressed?'
+            ]
+        },
+        {
+            id: 'courseContents',
+            title: 'Course Content',
+            icon: <BookOpen className="w-6 h-6" />,
+            questions: [
+                'How relevant was the course material?',
+                'How well-structured was the content?',
+                'How practical were the assignments?'
+            ]
+        },
+        {
+            id: 'labInfrastructure',
+            title: 'Laboratory Infrastructure',
+            icon: <Construction className="w-6 h-6" />,
+            questions: [
+                'How well-equipped were the labs?',
+                'How maintained were the equipment?',
+                'How accessible were the facilities?'
+            ]
+        },
+        {
+            id: 'libraryFacility',
+            title: 'Library Resources',
+            icon: <Library className="w-6 h-6" />,
+            questions: [
+                'How comprehensive was the book collection?',
+                'How helpful was the library staff?',
+                'How conducive was the study environment?'
+            ]
+        }
+    ];
 
-    const [feedback, setFeedback] = useState({
-        courseExpertise: '',
-        courseContents: '',
-        labInfrastructure: '',
-        libraryFacility: ''
-    });
+    const [feedback, setFeedback] = useState(
+        feedbackSections.reduce((acc, section) => ({
+            ...acc,
+            [section.id]: section.questions.reduce((qAcc, _, idx) => ({
+                ...qAcc,
+                [`q${idx + 1}`]: ''
+            }), {})
+        }), {})
+    );
+
     const [sentiments, setSentiments] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFeedback(prev => ({ ...prev, [name]: value }));
+    const handleChange = (sectionId, questionId, value) => {
+        setFeedback(prev => ({
+            ...prev,
+            [sectionId]: {
+                ...prev[sectionId],
+                [questionId]: value
+            }
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -29,12 +82,11 @@ const FeedbackForm = () => {
         setIsSubmitting(true);
 
         try {
-            // Submit feedback to backend
             const response = await axios.post('http://localhost:3000/feedback', {
-                courseId: courseId,
+                courseId,
+                courseName,
                 feedback
             });
-
             setSentiments(response.data.feedback);
             setIsSubmitted(true);
         } catch (error) {
@@ -44,84 +96,120 @@ const FeedbackForm = () => {
         }
     };
 
-    const handleViewDashboard = () => {
-        navigate('/');
-    };
+    const currentSection = feedbackSections[currentPage - 1];
 
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-200 flex items-center justify-center p-6"
+            className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6"
         >
-            <motion.div
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-2xl"
+            <motion.div 
+                initial={{ y: -20 }}
+                animate={{ y: 0 }}
+                className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden"
             >
-                <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">
-                    Course Feedback Form
-                </h2>
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+                    <h2 className="text-3xl font-bold">Course Feedback</h2>
+                    <p className="opacity-90 mt-2">Providing feedback for: <span className='font-semibold text-xl'>{courseName}</span></p>
+                </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {Object.keys(feedback).map((field) => (
+                <div className="p-8">
+                    <AnimatePresence mode="wait">
                         <motion.div
-                            key={field}
-                            whileFocus={{ scale: 1.02 }}
-                            transition={{ duration: 0.2 }}
-                            className="relative"
+                            key={currentPage}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="space-y-6"
                         >
-                            <label className="block text-gray-700 mb-2 capitalize">
-                                {field.replace(/([A-Z])/g, ' $1')}
-                            </label>
-                            <textarea
-                                name={field}
-                                value={feedback[field]}
-                                onChange={handleChange}
-                                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition resize-none"
-                                rows="3"
-                                placeholder={`Enter your feedback about ${field.replace(/([A-Z])/g, ' $1')}`}
-                            />
-                            {sentiments[field] && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className={`absolute top-0 right-0 px-3 py-1 rounded-full text-xs font-bold 
-                                        ${sentiments[field].sentiment === 'happy' ? 'bg-green-200 text-green-800' :
-                                            sentiments[field].sentiment === 'neutral' ? 'bg-yellow-200 text-yellow-800' :
-                                                'bg-red-200 text-red-800'}`}
-                                >
-                                    {sentiments[field].sentiment}
-                                </motion.div>
-                            )}
-                        </motion.div>
-                    ))}
+                            <div className="flex items-center gap-3 mb-6">
+                                {currentSection.icon}
+                                <h3 className="text-2xl font-semibold text-gray-800">
+                                    {currentSection.title}
+                                </h3>
+                            </div>
 
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        type="submit"
-                        disabled={isSubmitting}
-                        className={`w-full py-3 rounded-lg text-white font-bold transition ${isSubmitting
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
+                            {currentSection.questions.map((question, idx) => (
+                                <motion.div
+                                    key={`${currentSection.id}-q${idx + 1}`}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="space-y-2"
+                                >
+                                    <label className="block text-gray-700 font-medium">
+                                        {question}
+                                    </label>
+                                    <textarea
+                                        value={feedback[currentSection.id][`q${idx + 1}`]}
+                                        onChange={(e) => handleChange(currentSection.id, `q${idx + 1}`, e.target.value)}
+                                        className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-purple-500 transition-all duration-200 resize-none"
+                                        rows="3"
+                                        placeholder="Share your thoughts..."
+                                    />
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    </AnimatePresence>
+
+                    <div className="flex justify-between items-center mt-8">
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                                currentPage === 1 
+                                    ? 'bg-gray-100 text-gray-400' 
+                                    : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
                             }`}
-                    >
-                        {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
-                    </motion.button>
-                </form>
-                {isSubmitted && (
-                    <motion.button
-                        type="button"
-                        onClick={handleViewDashboard}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-full py-3 mt-4 rounded-lg text-white font-bold bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 transition"
-                    >
-                        View Dashboard
-                    </motion.button>
-                )}
+                        >
+                            <ChevronLeft className="w-5 h-5" /> Previous
+                        </motion.button>
+
+                        <div className="flex gap-2">
+                            {feedbackSections.map((_, idx) => (
+                                <motion.div
+                                    key={idx}
+                                    className={`w-3 h-3 rounded-full ${
+                                        currentPage === idx + 1 
+                                            ? 'bg-purple-600' 
+                                            : 'bg-purple-200'
+                                    }`}
+                                    whileHover={{ scale: 1.2 }}
+                                />
+                            ))}
+                        </div>
+
+                        {currentPage === feedbackSections.length ? (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleSubmit}
+                                disabled={isSubmitting}
+                                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700"
+                            >
+                                {isSubmitting ? (
+                                    'Submitting...'
+                                ) : (
+                                    <>
+                                        Submit <Send className="w-5 h-5" />
+                                    </>
+                                )}
+                            </motion.button>
+                        ) : (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setCurrentPage(prev => Math.min(feedbackSections.length, prev + 1))}
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200"
+                            >
+                                Next <ChevronRight className="w-5 h-5" />
+                            </motion.button>
+                        )}
+                    </div>
+                </div>
             </motion.div>
         </motion.div>
     );

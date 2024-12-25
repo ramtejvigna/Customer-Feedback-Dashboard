@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-    PieChart, Pie, Cell, Legend, ResponsiveContainer
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+    PieChart, Pie, Cell, ResponsiveContainer,
+    LineChart, Line, AreaChart, Area
 } from 'recharts';
-import { useNavigate } from 'react-router-dom';
+import {
+    BookOpen, Plus, TrendingUp, Users, Activity,
+    ThumbsUp, ThumbsDown, Meh, ChevronRight, Star,
+    Calendar, Clock, Award
+} from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
     const [courses, setCourses] = useState([]);
-    const [newCourse, setNewCourse] = useState({ courseName: '' });
-    const [feedbackData, setFeedbackData] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedCourse, setSelectedCourse] = useState(null);
     const navigate = useNavigate();
+    const [newCourse, setNewCourse] = useState({ courseName: '' });
+    const itemsPerPage = 4;
 
-    // Fetch Courses (existing code remains the same)
     useEffect(() => {
         const fetchCourses = async () => {
             try {
@@ -26,167 +35,222 @@ const Dashboard = () => {
         fetchCourses();
     }, []);
 
-    // Add Course Handler (existing code remains the same)
+    const weeklyData = [
+        { week: 'Week 1', students: 120, completion: 85 },
+        { week: 'Week 2', students: 150, completion: 78 },
+        { week: 'Week 3', students: 180, completion: 92 },
+        { week: 'Week 4', students: 220, completion: 88 }
+    ];
+
+    const paginatedCourses = courses.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
     const handleAddCourse = async (e) => {
         e.preventDefault();
         try {
             const response = await axios.post('http://localhost:3000/courses', newCourse);
             setCourses([...courses, response.data]);
             setNewCourse({ courseName: '' });
+            setSelectedCourse(null);
         } catch (error) {
             console.error('Failed to add course', error);
         }
     };
 
-    // Navigation to Feedback Form
-    const handleGiveFeedback = (courseId) => {
+    const handleGiveFeedback = (courseId, courseName) => {
         navigate(`/feedback`, {
             state: {
-                courseId: courseId
+                courseId: courseId,
+                courseName: courseName
             }
         });
     };
 
-    // Fetch Feedback Data for Charts (existing code remains the same)
-    useEffect(() => {
-        const fetchFeedbackData = async () => {
-            try {
-                const sentimentData = await Promise.all(
-                    courses.map(async (course) => {
-                        const response = await axios.get(`http://localhost:3000/course/${course._id}/feedback`);
-                        return {
-                            courseName: course.courseName,
-                            happy: response.data.filter(f => f.overallSentiment === 'happy').length,
-                            neutral: response.data.filter(f => f.overallSentiment === 'neutral').length,
-                            unhappy: response.data.filter(f => f.overallSentiment === 'unhappy').length
-                        };
-                    })
-                );
-                setFeedbackData(sentimentData);
-            } catch (error) {
-                console.error('Failed to fetch feedback', error);
-            }
-        };
-
-        if (courses.length > 0) {
-            fetchFeedbackData();
-        }
-    }, [courses]);
-
-    const COLORS = ['#00C49F', '#FFBB28', '#FF8042'];
+    const handleViewCourse = (courseId, courseName) => {
+        const slug = courseName.toLowerCase().replace(/\s+/g, '-');
+    
+        navigate(`/${slug}`, { state: { courseId, courseName } });
+    };
 
 
     return (
-        <>
-            <div className='w-full bg-black py-5 flex items-center justify-center'>
-                <h1 className="text-3xl font-bold text-white">Courses Dashboard</h1>
-            </div>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 p-8"
-            >
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Course List */}
-                    <motion.div
-                        initial={{ x: -50, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        className="bg-white rounded-2xl shadow-xl p-6"
-                    >
-                        <h2 className="text-2xl font-bold mb-4">Courses</h2>
-                        <form onSubmit={handleAddCourse} className="mb-4">
-                            <input
-                                type="text"
-                                value={newCourse.courseName}
-                                onChange={(e) => setNewCourse({ courseName: e.target.value })}
-                                placeholder="Enter Course Name"
-                                className="w-full p-2 border rounded-lg"
-                            />
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                type="submit"
-                                className="mt-2 w-full bg-blue-500 text-white p-2 rounded-lg"
-                            >
-                                Add Course
-                            </motion.button>
-                        </form>
-                        <ul>
-                            {courses.map((course) => (
-                                <motion.li
-                                    key={course._id}
-                                    whileHover={{ x: 10 }}
-                                    className="p-2 border-b last:border-b-0 hover:bg-gray-100 flex justify-between items-center"
-                                >
-                                    {course.courseName}
-                                    <motion.button
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => handleGiveFeedback(course._id)}
-                                        className="bg-green-500 text-white px-3 py-1 rounded-lg text-sm"
-                                    >
-                                        Give Feedback
-                                    </motion.button>
-                                </motion.li>
-                            ))}
-                        </ul>
-                    </motion.div>
-
-                    {/* Sentiment Bar Chart */}
-                    <motion.div
-                        initial={{ y: 50, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        className="bg-white rounded-2xl shadow-xl p-6 col-span-2"
-                    >
-                        <h2 className="text-2xl font-bold mb-4">Course Sentiment Analysis</h2>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={feedbackData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="courseName" />
-                                <YAxis />
-                                <Tooltip />
-                                <Bar dataKey="happy" stackId="a" fill="#00C49F" />
-                                <Bar dataKey="neutral" stackId="a" fill="#FFBB28" />
-                                <Bar dataKey="unhappy" stackId="a" fill="#FF8042" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </motion.div>
-
-                    {/* Sentiment Pie Chart */}
-                    <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="bg-white rounded-2xl shadow-xl p-6"
-                    >
-                        <h2 className="text-2xl font-bold mb-4">Overall Sentiment Distribution</h2>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={[
-                                        { name: 'Happy', value: feedbackData.reduce((sum, course) => sum + course.happy, 0) },
-                                        { name: 'Neutral', value: feedbackData.reduce((sum, course) => sum + course.neutral, 0) },
-                                        { name: 'Unhappy', value: feedbackData.reduce((sum, course) => sum + course.unhappy, 0) }
-                                    ]}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {[0, 1, 2].map((index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </motion.div>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white p-8">
+                <div className="max-w-7xl mx-auto">
+                    <h1 className="text-4xl font-bold mb-4">Course Analytics Dashboard</h1>
+                    <div className="flex gap-4">
+                        <div className="flex items-center gap-2 bg-white/20 rounded-lg px-4 py-2">
+                            <Users className="w-5 h-5" />
+                            <span>1,980 Active Users</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white/20 rounded-lg px-4 py-2">
+                            <Award className="w-5 h-5" />
+                            <span>92% Satisfaction Rate</span>
+                        </div>
+                    </div>
                 </div>
-            </motion.div>
-        </>
+            </div>
+
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto p-8">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    {[
+                        { title: 'Total Courses', value: courses.length, icon: BookOpen, color: 'bg-blue-500' },
+                        { title: 'Total Students', value: '2.5k+', icon: Users, color: 'bg-green-500' },
+                        { title: 'Avg. Rating', value: '4.6', icon: Star, color: 'bg-yellow-500' },
+                        { title: 'Completion Rate', value: '88%', icon: Award, color: 'bg-purple-500' }
+                    ].map((stat, i) => (
+                        <Card key={i} className="relative overflow-hidden">
+                            <CardContent className="p-6">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <p className="text-sm text-gray-600">{stat.title}</p>
+                                        <p className="text-2xl font-bold mt-1">{stat.value}</p>
+                                    </div>
+                                    <div className={`${stat.color} p-3 rounded-lg text-white`}>
+                                        <stat.icon className="w-6 h-6" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                {/* Charts Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <Card>
+                        <CardContent className="p-6">
+                            <h3 className="text-lg font-semibold mb-4">Weekly Progress</h3>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={weeklyData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="week" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="students" stroke="#8b5cf6" />
+                                    <Line type="monotone" dataKey="completion" stroke="#06b6d4" />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="p-6">
+                            <h3 className="text-lg font-semibold mb-4">Course Feedback Distribution</h3>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <PieChart>
+                                    <Pie
+                                        data={courses.map(course => ({
+                                            name: course.courseName,
+                                            value: course.feedback.length
+                                        }))}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={100}
+                                    >
+                                        {courses.map((_, index) => (
+                                            <Cell key={index} fill={['#8b5cf6', '#06b6d4', '#14b8a6', '#f59e0b', '#ef4444'][index % 5]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(value) => `${value} feedbacks`} />
+                                    <Legend />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Courses & Feedback */}
+                <Card>
+                    <CardContent className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-semibold">Course Feedback</h3>
+                            <Button variant="outline" onClick={() => setSelectedCourse(true)}>
+                                <Plus className="w-4 h-4 mr-2" /> Add Course
+                            </Button>
+                        </div>
+
+                        <div className="grid gap-4">
+                            {paginatedCourses.map((course) => (
+                                <div key={course.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-violet-100 p-3 rounded-lg">
+                                            <BookOpen className="w-6 h-6 text-violet-600" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold">{course.courseName}</h4>
+                                            <p className="text-sm text-gray-600">{course.feedback.length} feedbacks</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center">
+                                            <Star className="w-5 h-5 text-yellow-500" />
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => handleViewCourse(course._id, course.courseName)}
+                                        >
+                                            View Course
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => handleGiveFeedback(course._id, course.courseName)}
+                                        >
+                                            Give Feedback
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="flex justify-center gap-2 mt-6">
+                            {Array.from({ length: Math.ceil(courses.length / itemsPerPage) }).map((_, i) => (
+                                <Button
+                                    key={i}
+                                    variant={currentPage === i + 1 ? "default" : "outline"}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                    className="w-10 h-10"
+                                >
+                                    {i + 1}
+                                </Button>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            {selectedCourse && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+                        <Card className="w-full max-w-md">
+                            <CardContent className="p-6">
+                                <h3 className="text-xl font-semibold mb-4">Add Course</h3>
+                                <div className="space-y-4">
+                                    <Input
+                                        placeholder="Enter Course Name"
+                                        value={newCourse.courseName}
+                                        onChange={(e) => setNewCourse({ courseName: e.target.value })}
+                                    />
+                                    <div className="flex gap-2 justify-end">
+                                        <Button variant="outline" onClick={() => setSelectedCourse(null)}>
+                                            Cancel
+                                        </Button>
+                                        <Button onClick={handleAddCourse}>
+                                            Add Course
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+        </div>
     );
 };
 

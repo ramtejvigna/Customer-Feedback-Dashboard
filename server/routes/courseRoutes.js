@@ -6,12 +6,14 @@ const router = express.Router();
 // Get all courses
 router.get('/courses', async (req, res) => {
     try {
-        const courses = await Course.find();
+        // Populate the 'feedback' field with data from the referenced collection
+        const courses = await Course.find().populate('feedback');
         res.json(courses);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
+
 
 // Create a new course
 router.post('/courses', async (req, res) => {
