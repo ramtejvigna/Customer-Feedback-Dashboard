@@ -82,7 +82,7 @@ const FeedbackForm = () => {
 
         try {
             console.log(feedback)
-            const response = await axios.post('http://localhost:3000/feedback', {
+            const response = await axios.post('https://customer-feedback-backend-one.vercel.app/feedback', {
                 courseId,
                 courseName,
                 feedback
@@ -93,7 +93,7 @@ const FeedbackForm = () => {
             console.error('Submission failed', error);
         } finally {
             setIsSubmitting(false);
-            navigate('/');
+            // navigate('/');
         }
     };
 

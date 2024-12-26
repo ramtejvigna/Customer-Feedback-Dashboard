@@ -26,7 +26,7 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-                const response = await axios.get('http://localhost:3000/courses');
+                const response = await axios.get('https://customer-feedback-backend-one.vercel.app/courses');
                 setCourses(response.data);
             } catch (error) {
                 console.error('Failed to fetch courses', error);
@@ -50,7 +50,7 @@ const Dashboard = () => {
     const handleAddCourse = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:3000/courses', newCourse);
+            const response = await axios.post('https://customer-feedback-backend-one.vercel.app/courses', newCourse);
             setCourses([...courses, response.data]);
             setNewCourse({ courseName: '' });
             setSelectedCourse(null);

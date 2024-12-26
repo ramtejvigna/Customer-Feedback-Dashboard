@@ -24,7 +24,7 @@ const ViewCourse = () => {
     useEffect(() => {
         const fetchFeedbackData = async () => {
             try {
-                const response = await axios.get(`http://localhost:3000/course/${courseId}/feedback`);
+                const response = await axios.get(`https://customer-feedback-backend-one.vercel.app/course/${courseId}/feedback`);
                 const data = {
                     happy: response.data.filter(f => f.overallSentiment === 'happy').length,
                     neutral: response.data.filter(f => f.overallSentiment === 'neutral').length,
