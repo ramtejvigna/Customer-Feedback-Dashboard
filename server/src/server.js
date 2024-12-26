@@ -1,9 +1,9 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import feedbackRoutes from './routes/feedbackRoutes.js'
-import courseRoutes from './routes/courseRoutes.js'
-import config from './config.js';
+import feedbackRoutes from '../routes/feedbackRoutes.js'
+import courseRoutes from '../routes/courseRoutes.js'
+import config from '../config.js';
 
 const app = express();
 
