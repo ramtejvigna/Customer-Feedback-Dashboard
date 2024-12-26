@@ -10,7 +10,7 @@ router.post('/analyze-sentiment', async (req, res) => {
         const { feedback } = req.body;
 
         // Call Flask microservice for sentiment analysis
-        const sentimentResponse = await axios.post('http://localhost:5000/analyze_feedback', { feedback });
+        const sentimentResponse = await axios.post('https://customer-feedback-dashboard-b4wg.onrender.com/analyze_feedback', { feedback });
 
         return res.json(sentimentResponse.data);
     } catch (error) {
