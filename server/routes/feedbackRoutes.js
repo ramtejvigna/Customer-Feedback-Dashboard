@@ -23,10 +23,21 @@ router.post('/feedback', async (req, res) => {
     try {
         const { courseId, feedback } = req.body;
 
+        if (!courseId || !feedback) {
+            return res.status(400).json({ error: 'Missing courseId or feedback' });
+        }
+
         // Analyze sentiments for each feedback section
         const analyzedFeedback = await Promise.all(
             Object.entries(feedback).map(async ([key, text]) => {
-                const sentimentResponse = await axios.post('https://customer-feedback-dashboard-b4wg.onrender.com/analyze_feedback', { feedback: text });
+                const sentimentResponse = await axios.post(
+                    'https://customer-feedback-dashboard-b4wg.onrender.com/analyze_feedback',
+                    { feedback: text }
+                ).catch(err => {
+                    console.error(`Error analyzing feedback for section ${key}:`, err.message);
+                    throw new Error('Sentiment analysis failed');
+                });
+
                 return {
                     [key]: {
                         text,
@@ -59,10 +70,11 @@ router.post('/feedback', async (req, res) => {
 
         res.status(201).json(newFeedback);
     } catch (error) {
-        console.error('Feedback Save Error:', error);
-        res.status(500).json({ error: 'Failed to save feedback' });
+        console.error('Feedback Save Error:', error.message);
+        res.status(500).json({ error: error.message || 'Failed to save feedback' });
     }
 });
+
 
 router.get('/course/:courseId/feedback', async (req, res) => {
     try {
