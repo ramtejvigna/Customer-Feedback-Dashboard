@@ -26,7 +26,7 @@ router.post('/feedback', async (req, res) => {
         // Analyze sentiments for each feedback section
         const analyzedFeedback = await Promise.all(
             Object.entries(feedback).map(async ([key, text]) => {
-                const sentimentResponse = await axios.post('http://localhost:5000/analyze_feedback', { feedback: text });
+                const sentimentResponse = await axios.post('https://customer-feedback-dashboard-b4wg.onrender.com/analyze_feedback', { feedback: text });
                 return {
                     [key]: {
                         text,
