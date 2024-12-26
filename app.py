@@ -64,5 +64,9 @@ def analyze_feedback():
 def health_check():
     return jsonify({'status': 'healthy'}), 200
 
+@app.route('/')
+def home():
+    return "Hello, World!"
+
 if __name__ == '__main__':
     app.run(debug=True)
