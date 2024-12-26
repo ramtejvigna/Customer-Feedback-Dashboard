@@ -56,25 +56,24 @@ const FeedbackForm = () => {
     const [feedback, setFeedback] = useState(
         feedbackSections.reduce((acc, section) => ({
             ...acc,
-            [section.id]: section.questions.reduce((qAcc, _, idx) => ({
-                ...qAcc,
-                [`q${idx + 1}`]: ''
-            }), {})
+            [section.id]: Array(section.questions.length).fill('').join(', ')
         }), {})
     );
+    
 
     const [sentiments, setSentiments] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const handleChange = (sectionId, questionId, value) => {
-        setFeedback(prev => ({
-            ...prev,
-            [sectionId]: {
-                ...prev[sectionId],
-                [questionId]: value
-            }
-        }));
+    const handleChange = (sectionId, questionIdx, value) => {
+        setFeedback(prev => {
+            const currentValues = prev[sectionId].split(', ');
+            currentValues[questionIdx] = value;
+            return {
+                ...prev,
+                [sectionId]: currentValues.join(', ')
+            };
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -82,6 +81,7 @@ const FeedbackForm = () => {
         setIsSubmitting(true);
 
         try {
+            console.log(feedback)
             const response = await axios.post('http://localhost:3000/feedback', {
                 courseId,
                 courseName,
@@ -93,6 +93,7 @@ const FeedbackForm = () => {
             console.error('Submission failed', error);
         } finally {
             setIsSubmitting(false);
+            navigate('/');
         }
     };
 
@@ -132,7 +133,7 @@ const FeedbackForm = () => {
 
                             {currentSection.questions.map((question, idx) => (
                                 <motion.div
-                                    key={`${currentSection.id}-q${idx + 1}`}
+                                    key={`${currentSection.id}-${idx}`}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.1 }}
@@ -142,8 +143,8 @@ const FeedbackForm = () => {
                                         {question}
                                     </label>
                                     <textarea
-                                        value={feedback[currentSection.id][`q${idx + 1}`]}
-                                        onChange={(e) => handleChange(currentSection.id, `q${idx + 1}`, e.target.value)}
+                                        value={feedback[currentSection.id].split(', ')[idx]}
+                                        onChange={(e) => handleChange(currentSection.id, idx, e.target.value)}
                                         className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-purple-500 transition-all duration-200 resize-none"
                                         rows="3"
                                         placeholder="Share your thoughts..."
