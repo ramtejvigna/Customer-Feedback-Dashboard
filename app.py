@@ -41,20 +41,16 @@ def analyze_feedback():
         
         # Preprocess the feedback
         processed_feedback = preprocess_text(data['feedback'])
-        print('Preprocessed')
         
         # Transform the text using the vectorizer
         feedback_vector = vectorizer.transform([processed_feedback])
-        print('Vectorized')
         
         # Make prediction
         prediction = model.predict(feedback_vector)[0]
-        print('Prediction')
         
         # Map prediction to sentiment
         sentiment_map = {0: 'unhappy', 1: 'neutral', 2: 'happy'}
         sentiment = sentiment_map[prediction]
-        print('Assigned')
         
         return jsonify({
             'feedback': data['feedback'],
@@ -62,7 +58,6 @@ def analyze_feedback():
         })
     
     except Exception as e:
-        print(e)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/health', methods=['GET'])
