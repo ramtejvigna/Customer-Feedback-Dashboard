@@ -35,6 +35,7 @@ router.post('/feedback', async (req, res) => {
                     { feedback: text }
                 ).catch(err => {
                     console.error(`Error analyzing feedback for section ${key}:`, err.message);
+                    console.error(err.error);
                     throw new Error('Sentiment analysis failed');
                 });
 
